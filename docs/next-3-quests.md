@@ -13,8 +13,9 @@ Nothing executes yet. Five sessions of scaffolding, zero output. Fix that first.
 `exact.hpp`.
 
 - `include/heat/field.hpp` — just the free `index(i, j, n_point_y)` for now
-- `src/serial/main.cpp` — parse args, allocate, initial condition (parallel first touch), timestep
-  loop with pointer swap
+- `src/serial/main.cpp` — parse args, allocate, initial condition, timestep loop with pointer swap.
+  **No `#pragma omp` here** — `heat_serial` does not link OpenMP. (Corrected 2026-09-21: an earlier
+  version of this line said "parallel first touch"; that belongs in the `openmp_cpu` variant.)
 - `tests/convergence.cpp` — a stub `int main(){return 0;}` so CMake configures
 
 **Done when:** `cmake -S . -B build -G Ninja && cmake --build build && ./build/heat_serial 0 100 100 500`
