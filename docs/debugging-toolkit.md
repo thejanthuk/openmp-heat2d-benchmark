@@ -1,5 +1,7 @@
 # Debugging toolkit — which tool for which symptom
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 Reference, not a tutorial. The hard part is not learning `gdb` commands; it is knowing **which tool
 answers the question you actually have**, and recognising the bugs that none of them will find.
 

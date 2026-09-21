@@ -1,5 +1,7 @@
 # How to prove stability for *any* scheme
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 A procedure, not a result. Von Neumann analysis is mechanical once you know the substitution table;
 the only real skill is knowing when it applies and what it does not tell you.
 

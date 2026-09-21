@@ -1,5 +1,7 @@
 # Why loop order matters: cache lines, pages, stride, SIMD
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 Built from zero, no vocabulary assumed. Every number here was measured on this machine.
 
 ## The fact underneath everything

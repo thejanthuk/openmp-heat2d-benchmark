@@ -1,5 +1,7 @@
 # Next three quests
 
+> **Template/planning file written by Claude (an AI assistant).** Entries below are Claude's unless marked otherwise.
+
 Order matters: make it run, make it right, make it recorded.
 
 ## 1. Get a serial solver actually running  (~2 h)

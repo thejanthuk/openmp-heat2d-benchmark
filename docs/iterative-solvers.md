@@ -1,5 +1,7 @@
 # Iterative methods for linear systems: which, when, where
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 Needed because **implicit time-stepping turns every timestep into a linear solve** (the escape from
 `rx + ry <= 1/2`), and because the steady state of the heat equation is the Laplace equation. Also
 where parallelism stops being easy — the explicit stencil is embarrassingly parallel; Gauss-Seidel

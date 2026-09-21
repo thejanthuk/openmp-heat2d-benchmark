@@ -1,5 +1,7 @@
 # Week 1 forensics: why the GPU kernel ran 25x slower than its roofline
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 **Status: root cause identified 2026-09-17.** All measurements on the test machine (i7-7700HQ, single-channel
 DDR4-2400, GTX 1050 / GP107 / sm_61), GCC 16.2.0 nvptx offload, every GPU run under
 `OMP_TARGET_OFFLOAD=MANDATORY` with `omp_is_initial_device() == 0` asserted inside the kernel.

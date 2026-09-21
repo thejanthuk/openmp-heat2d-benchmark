@@ -1,5 +1,7 @@
 # Where `rx + ry <= 1/2` comes from, and how cost scales with N
 
+> **Written by Claude (an AI assistant)** as teaching/reference material for this project. Measurements were run on Krit's machine. Not Krit's own writing.
+
 Gate questions 2 and 5. Both are derivations rather than facts, so they live here — you will need
 to reproduce them for the report, and possibly at a whiteboard.
 

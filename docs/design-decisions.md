@@ -1,5 +1,7 @@
 # Design decisions
 
+> **Template/planning file written by Claude (an AI assistant).** Entries below are Claude's unless marked otherwise.
+
 One entry per design session. The point is not to record *what* was chosen but *why it was forced*,
 and what was given up. Structure is derived, not taste — so if I cannot name the force, I have not
 finished designing.
@@ -104,6 +106,7 @@ current
 ## 002 — `Field` owns its storage with `std::unique_ptr<real[]>`
 
 **Date:** 2026-09-18
+**Author:** drafted by Claude from a decision reached with Krit in review.
 **Claim:** the grid must be allocated once, freed automatically, never accidentally copied, and must
 hand a raw pointer to the OpenMP offload boundary.
 
@@ -140,6 +143,7 @@ noise, because the kernel is memory-bound.
 ## 003 — Input validation throws; `assert` is only for internal invariants
 
 **Date:** 2026-09-18
+**Author:** drafted by Claude from a decision reached with Krit in review.
 **Claim:** a `Config` that exists is a `Config` that is numerically stable — **in the build that
 produces the benchmark numbers.**
 

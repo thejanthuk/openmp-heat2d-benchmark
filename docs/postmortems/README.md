@@ -1,5 +1,7 @@
 # Post-mortems
 
+> **Template/planning file written by Claude (an AI assistant).** Entries below are Claude's unless marked otherwise.
+
 **Post-mortem the results, not just the incidents.** "This number was wrong for three weeks and I
 reported it" deserves the same treatment as a broken build — more, in computational science, because
 a wrong number propagates into a report, a paper, and someone else's citation.

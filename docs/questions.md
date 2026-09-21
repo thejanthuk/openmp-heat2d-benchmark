@@ -1,5 +1,7 @@
 # Candidate research questions
 
+> **Template/planning file written by Claude (an AI assistant).** Entries below are Claude's unless marked otherwise.
+
 The supervisor has said they have no fixed topic yet, so at some point the proposal comes from me. Research
 questions are *generated*, not found. One candidate a week, each with the observation that produced
 it — by month three there should be twenty and the good one should be obvious.
