@@ -1,0 +1,29 @@
+# Build
+build/
+cmake-build-*/
+*.o
+*.so
+*.a
+compile_commands.json
+.cache/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Benchmark output — regenerate it, don't commit it.
+# Exception: processed summaries and figures ARE committed; they are the data
+# behind the report and must be reviewable without re-running a 40-minute sweep.
+data/raw/
+!data/raw/.gitkeep
+
+# Reference books — copyrighted, and 55 MB. Kept locally, never pushed.
+docs/*.pdf
+!docs/private/project-spec.pdf
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
