@@ -16,7 +16,7 @@ ctest --test-dir build --output-on-failure    # run tests; ALWAYS --output-on-fa
 | `-S .` | source dir (where `CMakeLists.txt` is) |
 | `-B build` | build dir — everything generated goes here (gitignored, safe to delete) |
 | `-G Ninja` | write `build.ninja` instead of a `Makefile` |
-| `-DHEAT_GPU=ON` | also build the two GPU variants |
+| `-DHEAT_GPU=ON` | also build the two GPU variants — **fails to configure until `src/openmp_gpu_naive/main.cpp` and `src/openmp_gpu_optimized/main.cpp` exist** |
 | `-DHEAT_NATIVE=OFF` | portable binary (no `-march=native`) for another machine |
 | `-DCMAKE_BUILD_TYPE=Debug` | asserts live, `-g`, no `-O3` — use a separate dir |
 

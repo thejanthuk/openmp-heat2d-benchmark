@@ -7,6 +7,7 @@
 
 #include "heat/config.hpp"
 #include "heat/field.hpp"
+#include "heat/math.hpp"
 
 int main(int argc, char** argv)
 {
@@ -37,8 +38,8 @@ int main(int argc, char** argv)
           nxt[index(i, j)] = 0.0;
         }
         else {
-          double x = i * config.delta_x;
-          double y = j * config.delta_y;
+          heat::real x = i * config.delta_x;
+          heat::real y = j * config.delta_y;
 
           cur[index(i, j)] = std::sin(heat::pi * x / config.length_x)
                              * std::sin(heat::pi * y / config.length_y);
