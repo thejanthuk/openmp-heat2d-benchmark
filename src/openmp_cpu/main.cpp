@@ -14,8 +14,10 @@ int main(int argc, char** argv)
     const auto field = heat::openmp_cpu::run(config);
 
     const heat::Indexer index{config.n_point_y};
-    std::printf("Centre = %.17g\n", field[index(config.n_point_x / 2,
-                                                config.n_point_y / 2)]);
+    std::printf("Centre = %.17g\nTime = %.17g s\n",
+                                    field.field[index(config.n_point_x / 2,
+                                                      config.n_point_y / 2)],
+                                    field.seconds);
     return 0;
   }
   catch (const std::exception &error) {

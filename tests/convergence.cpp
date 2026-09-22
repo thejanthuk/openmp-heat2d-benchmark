@@ -44,7 +44,7 @@ static int check_convergence(const char *name, int x_multiplier,
     const auto field = heat::serial::run(config);
 
     const heat::real t = config.n_timestep * config.delta_t;
-    const double error = heat::l2_error(field.get(), t, config);
+    const double error = heat::l2_error(field.field.get(), t, config);
 
     order = std::log2(prev / error);
     if (prev > 0.0)

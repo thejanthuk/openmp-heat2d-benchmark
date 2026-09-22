@@ -9,10 +9,12 @@
 #include "heat/config.hpp"
 #include "heat/field.hpp"
 #include "heat/exact.hpp"
+#include "heat/result.hpp"
+#include "heat/timer.hpp"
 
 namespace heat::openmp_cpu {
 
-inline std::unique_ptr<real[]> run(const Config& config)
+inline RunResult run(const Config& config)
 {
 
   const int n_point_x = config.n_point_x;
@@ -45,6 +47,7 @@ inline std::unique_ptr<real[]> run(const Config& config)
     }
   }
 
+  const auto start = Clock::now();
   for (int step = 0; step < config.n_timestep; step++) {
     const real *uu = cur.get();
     real       *vv = nxt.get();
@@ -65,8 +68,9 @@ inline std::unique_ptr<real[]> run(const Config& config)
     
     std::swap(cur, nxt);
   }
+  const double seconds = seconds_since(start);
 
-  return cur;
+  return RunResult{std::move(cur), seconds};
 }
 
 } // namespace heat::openmp_cpu
