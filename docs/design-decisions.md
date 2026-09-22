@@ -218,3 +218,36 @@ costs O(dt) = O(dx^2), the same order as the discretisation error. Consequences:
   `#include "serial/solver.hpp"`.
 
 **Status:** approved, current
+
+## 005 — Time the timestep loop inside `run()`, and return the time with the field
+
+**Date:** 2026-09-22
+**Author:** decision and reasoning by Krit; drafted by Claude.
+
+**Claim:** the reported time is the cost of the timestep loop and nothing else, measured identically
+in all four variants.
+
+**Forces:**
+- The comparison is about the kernel. Allocation, the initial condition and output are not.
+- In the OpenMP variant the initial condition is itself parallel, so timing around it would partly
+  measure first touch, not the kernel.
+- Noise is already high on this machine (median +22% over min); unrelated work inside the timed region
+  adds variance that has nothing to do with the question.
+- All four variants must time exactly the same region, or a difference in *what* is timed shows up as a
+  difference in performance.
+
+**Decision:** start a `std::chrono::steady_clock` immediately before the `for (step …)` loop in `run()`,
+stop it immediately after, and return the elapsed seconds alongside the field. `steady_clock`, not
+`omp_get_wtime()`, so the serial variant stays OpenMP-free.
+
+**Krit's reasons:** (1) returning the inner time loses nothing — `main` can still time the whole call if
+asked, but the inner time can never be recovered from the outer one; (2) timing the whole call adds
+variance from work that is not being measured, so measure immediately around the work.
+
+**Alternative rejected:** timing the whole `run()` call from `main` — simpler, but it folds allocation and
+(for OpenMP) parallel first touch into the kernel time.
+
+**Side effect worth knowing:** because the OpenMP initial condition is parallel, the thread pool is
+created *before* the clock starts, so thread start-up is excluded from the timed loop.
+
+**Status:** current (implemented 2026-09-22: `include/heat/result.hpp`, `include/heat/timer.hpp`; centre unchanged, tests pass)

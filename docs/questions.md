@@ -61,3 +61,28 @@ linearising the iteration space inhibits vectorisation and adds integer div/mod 
 counts, on CPU and GPU separately — they may not agree, which would itself be the interesting part.
 **Worth it?:** a paragraph at minimum, and it is the respectful way to disagree with a supervisor's
 spec: bring a table, not an opinion.
+
+**PARTLY ANSWERED 2026-09-22** (N=2000, 100 steps, best of 5, GCC 16 `-O3 -march=native`):
+
+| | serial | `collapse(2)` | `parallel for` on `i` only |
+|---|---|---|---|
+| 1 thread | 1.048 s | 1.376 s (**0.76x**) | 0.996 s (1.05x) |
+| 4 threads | | 0.998 s (1.05x) | 0.955 s (1.10x) |
+
+`collapse(2)` costs ~1.4x at 1 thread by blocking vectorisation (14 -> 2 vector ops in the generated
+code) — **not** thread overhead, which measured 0.74-7 us per region, i.e. <0.2% of the gap. The penalty
+vanishes at 4 threads because four scalar cores can saturate memory, and both versions then hit the same
+wall: serial alone already runs at 9.17 GB/s against a measured 9.27 GB/s ceiling (single-channel DDR4).
+Open: does the penalty reappear on a machine with more memory bandwidth, where the kernel stops being
+memory-bound? Needs the university server.
+
+### Why is OpenMP 26x slower than serial on a 100x100 grid, when a parallel region costs only ~7 us?
+**Generator:** 1 — a number that doesn't match its model.
+**Observation (2026-09-22):** `0 100 100 500`, default thread count: serial 0.0023 s, OpenMP 0.061 s —
+about 122 us per timestep. An empty `parallel for` measured 0.74 us (1 thread) to 7 us (8 threads) per
+region. The overhead model is off by ~17x at this size. (At N=2000 the same model was *too large* to
+matter — so the bottleneck changes with problem size.)
+**Measurable as:** per-step time vs N (e.g. 50..2000) at 1/4/8 threads; `OMP_WAIT_POLICY=active` vs
+`passive`; `OMP_PROC_BIND=close`; a crossover N where OpenMP starts to win.
+**Worth it?:** probably a paragraph — "where does parallelism stop paying?" is a crossover (generator 3)
+the report should have anyway.
