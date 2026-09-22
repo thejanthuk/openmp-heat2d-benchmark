@@ -204,4 +204,17 @@ costs O(dt) = O(dx^2), the same order as the discretisation error. Consequences:
   always owns the latest field and is the one returned.
 - **Test:** check the error *magnitude* against a bound, not only the observed order.
 
-**Status:** proposed
+**Amendments (2026-09-22, verified before implementation):**
+- **`run()` lives in a per-variant namespace — `heat::serial::run`, `heat::openmp_cpu::run`, …** The
+  cross-version agreement test must include two variants' `solver.hpp` in one translation unit; both
+  defining `heat::run` is `redefinition of 'heat::run(const Config&)'`. Nested namespaces compile.
+- **The kernel reads through `const real* u`.** Writing to the current field — the in-place update
+  from gate question 1 — then fails to compile instead of silently converging at order 0.
+- **Acceptance: moving the code must not change a single digit.** With the initial condition taken
+  from `exact(x, y, 0.0, config)` (`exp(0)` is exactly 1.0) and the owners swapped, the centre is
+  still `0.82085005668074662` — bit-identical to the pre-refactor `main.cpp`.
+- `tests/convergence.cpp` reaches the header via
+  `target_include_directories(test_convergence PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)` and
+  `#include "serial/solver.hpp"`.
+
+**Status:** approved, current
