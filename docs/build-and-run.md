@@ -41,11 +41,21 @@ old value; only an explicit `-DHEAT_GPU=OFF` resets it.
 ## Checking includes
 
 ```bash
-for f in include/heat/*.hpp src/*/main.cpp tests/*.cpp; do
-  clang-tidy -checks='-*,misc-include-cleaner' "$f" -- -std=c++17 -Iinclude -x c++ 2>/dev/null | grep "warning:"
+cmake -S . -B build -G Ninja          # writes build/compile_commands.json (the real flags)
+for f in include/heat/*.hpp src/*/solver.hpp src/*/main.cpp tests/*.cpp; do
+  clang-tidy -p build -checks='-*,misc-include-cleaner' "$f" 2>/dev/null | grep -E "warning:|error:"
 done
 ```
 
-Finds the **silent** missing includes — files that compile only because another header happens to
-pull in what they need. It cannot analyse a file that fails to compile, so the **loud** ones (e.g.
-`std::unique_ptr` without `<memory>`) are still the compiler's job.
+`-p build` makes clang-tidy use **exactly the flags the build uses** (including `-Isrc` and `-fopenmp`),
+so it cannot drift from the build. **Keep `error:` lines visible**: if clang-tidy cannot compile a file,
+its other findings about that file are guesses.
+
+*(Corrected 2026-09-22: an earlier version hand-copied `-Iinclude` but not `-Isrc`, and only showed
+`warning:` lines. On `tests/convergence.cpp` it hid a `file not found` error and falsely reported
+`<initializer_list>` and `heat/exact.hpp` as unused — which Krit then removed, correctly following the
+tool.)*
+
+It finds the **silent** missing includes — files that compile only because another header happens to
+pull in what they need — but not all of them: the `<initializer_list>` needed by a braced range-for is
+invisible to it.

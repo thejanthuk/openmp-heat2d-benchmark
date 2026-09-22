@@ -17,5 +17,6 @@ can be read honestly as evidence of Krit's own work.
 | `docs/00-gpu-forensics.md` and the other teaching docs in `docs/` | Claude, with measurements run on Krit's machine. |
 | `docs/questions.md`, `docs/next-3-quests.md`, `docs/postmortems/README.md` | Claude (templates and planning). |
 | `docs/build-and-run.md` | Claude (reference card). |
+| `docs/postmortems/2026-09-22-tsan-openmp-false-positives.md` | Claude, about Claude's own error. |
 
 Every Claude-written file in `docs/` also says so at the top.

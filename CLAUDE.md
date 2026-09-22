@@ -167,13 +167,15 @@ on 2026-09-15:
   system-wide `perf record -a` are blocked, and neither is needed. If ever wanted:
   `sudo sysctl kernel.perf_event_paranoid=1` — a sysctl, not a rebuild.
 - **rr serialises threads onto one core** (measured 9.4x slowdown on 4 threads), so it can neither
-  find races nor time parallel code. Division of labour: **TSan finds races, rr debugs logic,
-  perf measures speed.**
-- **Use GCC for TSan on OpenMP, not Clang** — the reverse of the usual advice. Archer is absent, so
-  Clang's `libomp` produces false positives on *correct* code (measured: 1 warning on a clean
-  reduction); GCC is clean and still catches real races.
-- Reading a TSan report: **does any frame name a file the user wrote?** If every frame is
-  `libomp.so`/`libgomp.so`/`libc`, it is runtime noise.
+  find races nor time parallel code. Division of labour: **TSan finds races (not for OpenMP here — see below), rr debugs
+  logic, perf measures speed.**
+- **TSan does NOT work for OpenMP on this machine (corrected 2026-09-22).** Both libgomp and libomp
+  synchronise their thread pools invisibly to TSan, so every cross-thread hand-off is reported — even
+  a single `parallel for` followed by a serial read (GCC 1 report, Clang 2); Krit's correct solver got
+  20. The false positives name the user's own lines. The earlier "GCC is clean" claim came from one
+  `reduction` test, whose atomics TSan can see. **Race check for OpenMP here = differential testing
+  vs the serial solver at 1/2/4/8 threads.** Real TSan needs LLVM OpenMP with Archer (not installed).
+  See `docs/postmortems/2026-09-22-tsan-openmp-false-positives.md`.
 - Costs: ASan+UBSan ~5x (leave on in debug builds), **TSan ~71x** (N=64 only). The two are
   **mutually exclusive** — the compiler refuses to combine them.
 - **A result that changes with thread count or `schedule(dynamic)` is usually NOT a race** — it is

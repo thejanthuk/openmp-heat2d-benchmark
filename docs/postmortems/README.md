@@ -46,4 +46,4 @@ GPU row when it fails" is.
 
 ## Index
 
-*(none yet — the first is the GPU result, Week 1, on a result I reported myself)*
+- `2026-09-22-tsan-openmp-false-positives.md` — Claude's toolkit claimed GCC TSan was clean on correct OpenMP code; it is not.

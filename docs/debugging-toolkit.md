@@ -13,7 +13,7 @@ Every number below was measured on the test machine on 2026-09-15, not quoted fr
 |---|---|---|
 | Segfault, immediate crash | **gdb** — `gdb ./solver` then `run`, then `bt` | 10 seconds to a backtrace. Don't add printfs. |
 | Wrong answer, but **reproducible and serial** | **assert + print**, then gdb if state is complex | Sanitizers find *undefined behaviour*, not wrong physics. A stable wrong answer is usually a wrong formula. |
-| Wrong answer **only with >1 thread** | **TSan** | This is a data race until proven otherwise. gdb is useless — attaching changes the timing. |
+| Wrong answer **only with >1 thread** | **Differential test vs serial** at 1/2/4/8 threads | Likely a race. TSan is unusable for OpenMP here (see below); gdb perturbs timing. |
 | Answer changes **run to run** | First ask: `schedule(dynamic)`? Then it may be **FP non-associativity, not a bug** — see below. Otherwise TSan. | TSan reports *nothing* for FP non-determinism, because there is no race. |
 | Crash far from the cause; heap corruption; `free(): invalid pointer` | **ASan** | gdb shows you where it *manifested*, ASan shows where it *happened*. |
 | Reads uninitialised memory; suspicious index arithmetic | **ASan + UBSan** together (5x, cheap) | Leave these on in every debug build. |
@@ -57,55 +57,30 @@ The plain build is the dangerous one: a real out-of-bounds write that silently s
 whatever lives in the slack. This is precisely why `-fsanitize=address,undefined` belongs in every
 debug build rather than being something you reach for after a crash.
 
-## TSan on OpenMP: use GCC here, not Clang
+## TSan on OpenMP: it does NOT work on this machine  (corrected 2026-09-22)
 
-The usual internet advice is "Clang + Archer". **Measured on this machine, that advice is backwards.**
-Archer is not installed, and Clang's `libomp` is not TSan-instrumented, so it reports races inside
-its own runtime:
+**Earlier versions of this file said "use GCC for TSan on OpenMP — it is clean on correct code". That
+was wrong.** See `docs/postmortems/2026-09-22-tsan-openmp-false-positives.md`.
 
-| Compiler | Correct OpenMP code | Code with a real race |
+Both OpenMP runtimes here synchronise their thread pools with mechanisms TSan cannot see, so TSan
+reports **every** cross-thread hand-off as a race — including on trivially correct code:
+
+| Correct program | GCC TSan | Clang TSan |
 |---|---|---|
-| **gcc -fsanitize=thread** | **0 warnings** — clean | 2 warnings, correct |
-| clang -fsanitize=thread | **1 warning — false positive** | 3 warnings (1 is noise) |
+| one `parallel for` writing an array, then a *serial* read | 1 report | 2 reports |
+| two back-to-back `parallel for` regions | 3 reports | 4 reports |
+| Krit's double-buffered solver (bit-identical to serial) | **20 reports** | — |
 
-So: **`gcc -g -O1 -fopenmp -fsanitize=thread`** is the working configuration here. Re-check this if
-`llvm-runtimes/openmp` is ever installed with Archer.
+The false positives **name your own source lines**, so "does any frame name a file you wrote?" cannot
+tell them apart from real races.
 
-### How to read a TSan report in five seconds
+**What to use instead:** differential testing — compare every grid point against the serial solver at
+1, 2, 4 and 8 threads and across repeated runs. For a deterministic kernel, a real race almost never
+stays bit-identical under that. **To get working TSan for OpenMP:** install LLVM's OpenMP runtime with
+**Archer** and use Clang (not installed; a Gentoo rebuild).
 
-**Does any stack frame name a file you wrote?** That single question separates signal from noise.
-
-*False positive* — every frame is inside the runtime, no source file of yours:
-
-```
-  Atomic read of size 1 ... by main thread:
-    #0 pthread_mutex_lock <null> (clang_clean+0x6971b)
-    #1 <null> <null> (libomp.so+0xb27f8)          <-- runtime internals only
-```
-
-*True positive* — top frame is **your file, your line**:
-
-```
-  Write of size 8 ... by thread T3:
-    #0 main._omp_fn.0  inplace.c:11               <-- your code, line 11
-```
-
-`main._omp_fn.0` is GCC's name for the **outlined** body of your parallel region — the compiler
-lifts the loop body into its own function to hand to the thread team. Seeing that name is a useful
-reminder of what `#pragma omp parallel for` actually compiles to (Chapman Ch 8).
-
-### The race that matters for this project
-
-Updating the grid in place — no second buffer — is a genuine data race: one thread reads
-`T[i-1][j]` while its neighbour writes it. TSan catches it and names the line:
-
-```
-SUMMARY: ThreadSanitizer: data race inplace.c:11 in main._omp_fn.0
-```
-
-This is worth doing deliberately once. It is the same bug as gate question 1, and it has **two
-independent signatures**: TSan names the line, and the convergence study collapses from order 2 to
-order 0. Seeing one bug through both lenses is how the tools stop being separate subjects.
+The in-place-update "demo" that used to be here ran 3 timesteps (3 regions) and would have been flagged
+even without the bug, so it demonstrated nothing and has been removed.
 
 ## The non-bug that looks like a bug
 
