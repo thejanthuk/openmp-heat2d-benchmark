@@ -1,10 +1,10 @@
-# Next three quests
+# Next three quests — ALL DONE (2026-09-22)
 
 > **Template/planning file written by Claude (an AI assistant).** Entries below are Claude's unless marked otherwise.
 
 Order matters: make it run, make it right, make it recorded.
 
-## 1. Get a serial solver actually running  (~2 h)
+## 1. Get a serial solver actually running — DONE 2026-09-21
 
 Nothing executes yet. Five sessions of scaffolding, zero output. Fix that first.
 
@@ -21,7 +21,7 @@ Nothing executes yet. Five sessions of scaffolding, zero output. Fix that first.
 **Done when:** `cmake -S . -B build -G Ninja && cmake --build build && ./build/heat_serial 0 100 100 500`
 runs and the centre value **decays** rather than growing or turning NaN.
 
-## 2. Prove it is correct  (~2 h)
+## 2. Prove it is correct — DONE 2026-09-22 (order 2.000 on square and 1x0.5, nx != ny)
 
 This is the checkpoint that validates everything else. Do it before any timing.
 
@@ -36,7 +36,7 @@ an in-place update. Both failure signatures are in an earlier local guide.
 **Watch for:** `exact.hpp` and the kernel must agree on which index is contiguous. Disagree and the
 solver runs, converges at order 1, and says nothing about why.
 
-## 3. Make the record real  (~30 min)
+## 3. Make the record real — DONE (git history since 2026-09-21)
 
 - `git init`, then commit in logical steps with the reasoning in each message. Five sessions of work
   is currently untracked and one `rm` from gone — and it is the authorship evidence.

@@ -28,7 +28,8 @@ option(HEAT_GPU    "Build the OpenMP GPU offload variants"   OFF)
 # because GCC's nvptx offload is unreliable across translation units.
 add_library(heat_common INTERFACE)
 target_include_directories(heat_common INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(heat_common INTERFACE -Wall -Wextra -Wpedantic -Wfloat-conversion)
+target_include_directories(heat_common INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_options(heat_common INTERFACE -Wall -Wextra -Wpedantic -Wfloat-conversion -Werror)
 if(HEAT_NATIVE)
   # -march=native unlocks AVX2 + FMA on this machine: 4 doubles per instruction
   # instead of SSE2's 2, plus fused multiply-add. Off by default on unknown

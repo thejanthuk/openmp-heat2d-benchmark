@@ -4,7 +4,7 @@
 #include "heat/config.hpp"
 #include "heat/field.hpp"
 
-#include "solver.hpp"
+#include "serial/solver.hpp"
 
 int main(int argc, char** argv)
 {
