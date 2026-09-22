@@ -5,6 +5,8 @@
 #include <memory>
 #include <utility>
 
+#include "heat/dtype.hpp"
+
 #include "heat/config.hpp"
 #include "heat/field.hpp"
 #include "heat/math.hpp"
@@ -30,10 +32,10 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < n_point_x; i++) {
       for (int j = 0; j < n_point_y; j++) {
-        bool boundary_i = i == 0 || i == n_point_x - 1;
-        bool boundary_j = j == 0 || j == n_point_y - 1;
+        bool bound_i = i == 0 || i == n_point_x - 1;
+        bool bound_j = j == 0 || j == n_point_y - 1;
 
-        if (boundary_i || boundary_j) {
+        if (bound_i || bound_j) {
           cur[index(i, j)] = 0.0;
           nxt[index(i, j)] = 0.0;
         }

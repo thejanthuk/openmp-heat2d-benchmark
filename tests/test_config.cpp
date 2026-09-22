@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <exception>
 #include <cmath>
 #include <cstdio>
 

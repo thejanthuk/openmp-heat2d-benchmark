@@ -41,11 +41,8 @@ struct Config {
   real rate_y;
 };
 
-inline Config make_config(int run_id,
-                          int n_interval_x,
-                          int n_interval_y,
-                          int n_timestep,
-                          real alpha = default_alpha,
+inline Config make_config(int run_id, int n_interval_x, int n_interval_y,
+                          int n_timestep, real alpha = default_alpha,
                           real length_x = default_length,
                           real length_y = default_length,
                           real coeff = default_coeff)

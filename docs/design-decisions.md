@@ -166,3 +166,42 @@ behind every reported number, and it costs one comparison *per run*.
   giving `rx+ry = -0.5` and `dt = -2.5e-05` — time running backwards.
 
 **Status:** current
+
+## 004 — The timestep loop lives in a per-variant `run(const Config&)`; `main()` is thin
+
+**Date:** 2026-09-21
+**Author:** drafted by Claude at Krit's request, after Krit twice asked for the next step rather than
+choosing between A/B/C. To be accepted or amended by Krit.
+
+**Claim:** the convergence test exercises the *same* kernel that `main.cpp` runs, at many grid sizes,
+without a command line.
+
+**Forces:**
+1. The test must run the solver with no command line — so the solver takes a `Config`, not `argc/argv`.
+2. ADR-001: the four variants differ only in the pragma — each variant still owns its own loop.
+3. Shared code must be header-only (GCC nvptx offload across translation units).
+4. The test must exercise the real kernel, not a copy of it.
+
+**Decision:** each variant gets `src/<variant>/solver.hpp` with `run(const Config&)` that allocates,
+applies the initial condition, steps to the end and **returns the final field**. `main.cpp` becomes
+`parse_args` -> `run` -> print. `tests/convergence.cpp` includes `src/serial/solver.hpp` and calls
+`run` at each N. The diff between variants moves from `main.cpp` to `solver.hpp`, and stays
+pragma-only.
+
+**Alternatives rejected:**
+
+| Rejected | Why |
+|---|---|
+| **B. Test runs the binary and parses stdout** | Tests the real program, but depends on the print format, only sees what `main` prints (needs `main` to compute L2), and the later cross-version check would need full fields dumped to files. |
+| **C. Copy the stencil into the test** | Breaks force 4 silently: the test passes while proving only that its own copy converges. |
+| **One shared `run()` in `include/heat/`** | Breaks force 2: variants sharing one loop cannot differ by their pragma. |
+
+**The trap inside this design, measured (throwaway, N = 20..160, fixed t_end):** returning the wrong one
+of the two buffers — one timestep stale — **still converges at order 2** (1.973, 1.984, 1.992 vs the
+correct 1.970, 1.984, 1.991). Only the error *size* differs: 5.9e-05 vs 3.6e-06 at N=160. Staleness
+costs O(dt) = O(dx^2), the same order as the discretisation error. Consequences:
+- **Design:** swap the `unique_ptr`s themselves each step (not just raw pointers), so one named buffer
+  always owns the latest field and is the one returned.
+- **Test:** check the error *magnitude* against a bound, not only the observed order.
+
+**Status:** proposed

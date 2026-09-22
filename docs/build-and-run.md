@@ -37,3 +37,15 @@ old value; only an explicit `-DHEAT_GPU=OFF` resets it.
 | Switch Ninja <-> Make | refused in an existing dir — `rm -rf build` first |
 | Anything confusing | `rm -rf build` and configure again; it is all regenerable |
 | GPU run | build with `-DHEAT_GPU=ON`, run with `OMP_TARGET_OFFLOAD=MANDATORY ./build/heat_gpu_naive ...` |
+
+## Checking includes
+
+```bash
+for f in include/heat/*.hpp src/*/main.cpp tests/*.cpp; do
+  clang-tidy -checks='-*,misc-include-cleaner' "$f" -- -std=c++17 -Iinclude -x c++ 2>/dev/null | grep "warning:"
+done
+```
+
+Finds the **silent** missing includes — files that compile only because another header happens to
+pull in what they need. It cannot analyse a file that fails to compile, so the **loud** ones (e.g.
+`std::unique_ptr` without `<memory>`) are still the compiler's job.
