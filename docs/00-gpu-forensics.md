@@ -13,24 +13,29 @@ The four-version benchmark reported "GPU offload is ~3x slower than a single CPU
 
 | Version | Measured | Roofline | |
 |---|---|---|---|
-| Serial CPU | 3.97 s | 4.0 s | at ~100% of achievable DRAM bandwidth |
-| naive - optimized | 12.64 s | 12.8 s | PCIe transfer model good to 1% |
+| Serial CPU | 3.97 s | 4.0 s | ~100% of the *inherited* ~11.9 GB/s — see note below |
+| naive - optimized | 12.64 s | 13.0 s *(corrected, see below)* | PCIe transfer model good to ~3% |
 | GPU optimized | 13.15 s | **0.53 s** | **25x off** |
 
 Two thirds of the experiment matched its model, which localised the defect to kernel execution.
+
+*Audit note (2026-09-22):* the 4.0 s roofline divided 48 GB by the inherited ~11.9 GB/s, whose byte
+accounting was never recorded. Against the idle triad measured on 2026-09-22 — 14.2–14.5 GB/s *actually
+moved* — the roofline is ~3.35 s and the 3.97 s run reached **~84%**, not ~100%. The conclusion stands (the
+serial and PCIe rows are near their models; the GPU row is 25x off), but "~100%" was too strong.
 
 ## Step 1 — measure the ceilings
 
 | Ceiling | Measured | Theoretical | Achieved |
 |---|---|---|---|
-| Host memory (STREAM triad, 32 MB arrays) | **9.27 GB/s** | 19.2 GB/s | 48% |
+| Host memory (STREAM triad, 32 MB arrays) | **9.27 GB/s** (re-run 09-22: 10.1–11.0) | 19.2 GB/s | 48% (09-22: 53–57%) |
 | PCIe host->device (32 MB) | **3.66 GB/s** | 15.75 GB/s | 23% |
 | PCIe device->host | **3.73 GB/s** | | |
 | **GPU triad, data resident** | **7.38 GB/s** | **112 GB/s** | **6.6%** |
 
 Host bandwidth is flat at ~9 GB/s across 1, 2, 4 and 8 threads — one core already saturates the
 single memory channel, which is the expected signature. (At 24 B/element accounting; counting the
-write-allocate read makes it 32 B/element = 12.4 GB/s, consistent with the ~11.9 GB/s on record.)
+write-allocate read makes it 32 B/element = 12.4 GB/s, consistent with the ~11.9 GB/s on record — though that older figure never stated how bytes were counted; see `docs/audit-2026-09-22.md` #14.)
 
 **The GPU triad is the finding.** It is ten lines: `a[i] = b[i] + s*c[i]`. No stencil, no
 `collapse(2)`, no index arithmetic, no FP64 subtlety — and it reaches **6.6% of device bandwidth**.
@@ -72,6 +77,9 @@ under 1% occupancy. That is the 25x.
 **Best achievable on this toolchain: 7.15 GB/s, 6.4% of the hardware's 112 GB/s.**
 
 Measured host bandwidth is **9.27 GB/s**. So on this toolchain the GPU is worth **0.77x the CPU** —
+*(audit 2026-09-22: re-measured with both triads in one process, twice, the second on a quiet machine (CPU ~95% idle, load settled at ~2) —
+CPU 10.1–11.0, GPU 7.11–7.37 GB/s —
+the ratio is **~0.7x (0.65–0.71x)**; the 09-17 host figure was low, machine state unknown)* —
 genuinely slower, and no amount of tuning fixes it, because the thread cap is not tunable.
 
 ## Conclusion
@@ -96,14 +104,14 @@ Clang/LLVM and NVHPC use different runtimes and may not share the limit. That ca
 would be required). Until that comparison exists, every conclusion must say **"GCC's offload"**, not
 **"OpenMP offload"**.
 
-Also untested: `-misa=sm_61` (GCC defaults to sm_30 PTX). Unlikely to matter for occupancy, but it
+Also untested: `-misa=sm_61` (GCC 16 defaults to **sm_52** PTX, checked in the emitted PTX; an earlier "sm_30" here was wrong). Unlikely to matter for occupancy, but it
 is still open.
 
 ## Consequences for the report
 
 1. The benchmark table stands, with the explanation corrected.
 2. The naive-vs-optimized comparison is **unaffected and still valid** — it isolates PCIe transfer
-   cost, it matched its model to 1%, and both versions share the same thread cap, so the difference
+   cost, it matched its *corrected* model to ~3% (the naive kernel moves 3 arrays per step, 48 GB, at the measured 3.66/3.73 GB/s -> 13.0 s; the original "1%" used 4 arrays at an assumed 5 GB/s — two cancelling errors, audit #18), and both versions share the same thread cap, so the difference
    between them remains a clean measurement.
 3. The honest headline is *"GCC's OpenMP offload achieves 6% of device bandwidth on this hardware,
    which is why the GPU loses to a single CPU core"* — a much stronger result than "the GPU is slow".

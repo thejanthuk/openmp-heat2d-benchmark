@@ -29,7 +29,7 @@ it — by month three there should be twenty and the good one should be obvious.
 ### Why does GCC's nvptx OpenMP offload reach only ~3% of achievable device bandwidth on a 5-point stencil, and what recovers it?
 **Generator:** 1 — a number that doesn't match its model.
 **Observation:** N=2000, 500 steps moves ~48 GB. GTX 1050 does 112 GB/s → predicted ~0.53 s.
-Measured 13.15 s. The PCIe half of the same experiment matches its model to 1%, so the defect is
+Measured 13.15 s. The PCIe half of the same experiment matches its (corrected) model to ~3%, so the defect is
 localised to kernel execution.
 **Measurable as:** ablation over launch geometry (`num_teams`/`thread_limit`), `collapse(2)` on/off,
 FP32 vs FP64, PTX ISA target, device optimisation level — each predicted before it is run.
@@ -72,9 +72,22 @@ spec: bring a table, not an opinion.
 `collapse(2)` costs ~1.4x at 1 thread by blocking vectorisation (14 -> 2 vector ops in the generated
 code) — **not** thread overhead, which measured 0.74-7 us per region, i.e. <0.2% of the gap. The penalty
 vanishes at 4 threads because four scalar cores can saturate memory, and both versions then hit the same
-wall: serial alone already runs at 9.17 GB/s against a measured 9.27 GB/s ceiling (single-channel DDR4).
+wall. **Idle re-run 2026-09-22:** serial moves 12.5–12.8 GB/s against a ~14.5 GB/s ceiling counted the same
+way — **~87%** (neither the 99% nor the 73% claimed earlier that day; see audit). Most a thread count could
+add is ~1.14x; the best measured is 1.06x (4 threads, no `collapse`). `collapse(2)` idle, 1 thread: **1.42x**
+(C), **1.46x** (C++).
 Open: does the penalty reappear on a machine with more memory bandwidth, where the kernel stops being
 memory-bound? Needs the university server.
+
+**Mechanism confirmed by GCC's own report (2026-09-22, `-fopt-info-vec-all`), after Krit challenged the
+claim.** Without `collapse(2)` the kernel's inner loop is `vectorized using 32 byte vectors` in both the C
+and C++ versions. With it: C — `not vectorized: unsupported control flow in loop`; C++ — `not vectorized:
+vectorization is not profitable` (only a basic-block fragment, 16-byte). The merged loop needs a
+row-wraparound branch the vectoriser cannot handle. Krit's original C code, 1 thread, n=2000 (measured under load; idle re-run: **1.42x**): 1.28x
+slower with `collapse(2)` (1.324 vs 1.036 s). Compile time identical (0.21 s). Krit's own pre-existing C
+benchmark already showed OpenMP-1-thread at 0.55-0.68x of serial at every resolution.
+Side finding: the vectorised versions are `loop versioned ... because of possible aliasing` — the case
+`restrict` exists for.
 
 ### Why is OpenMP 26x slower than serial on a 100x100 grid, when a parallel region costs only ~7 us?
 **Generator:** 1 — a number that doesn't match its model.
@@ -86,3 +99,13 @@ matter — so the bottleneck changes with problem size.)
 `passive`; `OMP_PROC_BIND=close`; a crossover N where OpenMP starts to win.
 **Worth it?:** probably a paragraph — "where does parallelism stop paying?" is a crossover (generator 3)
 the report should have anyway.
+
+### Why is 8 threads the slowest thread count, while 16 recovers?
+**Generator:** 1 — a number that doesn't match its model.
+**Observation (reproduced 2026-09-22, idle):** N=2000 stencil, `collapse(2)`: 4 threads 1.04x, **8 threads
+0.88x**, 16 threads 0.98x vs serial (under load earlier the same day: 0.69x at 8, 0.96x at 16). 8 threads =
+two hyperthreads per core. Neither "more threads = more contention" nor "context switching" predicts that
+oversubscribing to 16 would *help*.
+**Measurable as:** `OMP_PROC_BIND=close|spread` and `OMP_PLACES=cores|threads` at 8 threads; per-thread
+timing; `perf stat` cache misses at 4 / 8 / 16.
+**Worth it?:** a paragraph — it's a real, reproducible anomaly in the report's own scaling table.

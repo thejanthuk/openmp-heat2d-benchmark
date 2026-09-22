@@ -86,40 +86,60 @@ marked as Claude's. (2026-09-21: logs written as "I said…" had been pushed unl
 **Cold-start test:** a session opening with no context should be able to reconstruct where the work
 stands from `NOTES.md` + `docs/sessions/` + `docs/design-decisions.md` alone.
 
-## Verified environment — measured on this machine, not assumed
+## Environment — checked against this machine (audit 2026-09-22: `docs/audit-2026-09-22.md`)
 
-Gentoo, kernel 7.1.7 (`CONFIG_PREEMPT=y`, `HZ=1000`, no transparent huge pages).
-GCC 16.2.0, Clang 23.1.1, CMake 4.3.5, Python 3.14.7, gnuplot. Not installed: `perf`, `valgrind`,
-ParaView.
+**Before quoting any number below, check its label.** *Measured* = re-tested by Claude on this
+machine. *Inherited* = copied from an earlier local guide and never re-checked. *Spec* = datasheet.
 
-- **i7-7700HQ**, 4 cores / 8 threads. L1d 32 KiB/core, L2 256 KiB/core, **L3 6 MiB shared**,
-  AVX2+FMA.
-- **16 GiB DDR4-2400, single channel** (one SODIMM slot empty). 19.2 GB/s theoretical,
-  **~11.9 GB/s measured.** This is why the kernel is bandwidth-bound and 4 cores buy only ~12–24%.
-  That is the expected result, not a bug.
-- **GTX 1050**, GP107, **sm_61**, 5 SMs, 4 GiB, **112 GB/s**. Consumer Pascal, so
-  **FP64 = 1/32 of FP32 ~= 76 GFLOPS**.
-- PCIe 3.0 x16: 15.75 GB/s theoretical, ~5–6 GB/s effective.
+Gentoo, kernel 7.1.7 (`CONFIG_PREEMPT=y`, `HZ=1000`; transparent huge pages compiled in,
+mode **madvise** since the 2026-09-16 kernel rebuild — plain allocations get none unless they ask).
+GCC 16.2.0, Clang 23.1.1, CMake 4.3.5, Python 3.14.7, gnuplot, gdb 17.2, rr 5.9.0, perf 7.2,
+Valgrind 3.27.1. Not installed: ParaView, `libomptarget`/Archer.
 
-Kernel arithmetic intensity ~10 flops / 24 B ~= **0.42 flop/byte** → bandwidth-bound on both.
+- **i7-7700HQ**, 4 cores / 8 threads. L1d 32 KiB 8-way, L2 256 KiB 4-way per core, **L3 6 MiB 12-way
+  shared**, 64 B lines, AVX2+FMA. *(measured)*
+- **16 GiB DDR4-2400, single channel** *(inherited — from an earlier `dmidecode`; needs root to
+  re-check)*. 19.2 GB/s theoretical.
+- **Memory bandwidth — idle, 2026-09-22, always state how bytes were counted.** Triad: 10.6–10.9 GB/s
+  STREAM-counted (24 B/element) = **14.2–14.5 GB/s actually moved** (32 B incl. write-allocate) at 1–4
+  threads, 13.9 at 8. The serial stencil moves 24 B/point actually: **12.5–12.8 GB/s ≈ 87%** of that
+  ceiling. *(Withdrawn: "99%" and "~11.9 GB/s" mixed the two ways of counting; "73%" and "the triad slows
+  with more threads" were measured with a video player running.)*
+- **OpenMP scaling of the stencil is tiny — idle, N=2000:** best **1.06x** (4 threads, `parallel for` on
+  `i`), 1.04x with `collapse(2)`; **8 threads is the slowest** (0.88x with `collapse(2)`), 16 recovers
+  (0.98x) — reproduced, unexplained (`docs/questions.md`). Consistent with the ~87% above: the most any
+  thread count could add is ~1.14x.
+- **GTX 1050**, GP107, **sm_61**, 4 GiB, PCIe gen3 **x16**, memory 7.0 Gbps -> **112 GB/s**
+  *(measured via `nvidia-smi`; 128-bit bus and 5 SMs / 640 cores are spec)*. FP64 = 1/32 of FP32
+  ≈ 76 GFLOPS *(derived from spec, not measured)*.
+- **PCIe: measured 3.66 GB/s host->device, 3.73 device->host** (32 MB, pageable, 2026-09-17), against
+  15.75 GB/s theoretical. The earlier "~5–6 GB/s" is withdrawn.
 
-**Benchmark noise is high** (spread: median +22%, max +83% over min). Best-of-N on an idle machine,
-never single-shot.
+Kernel arithmetic intensity ~10 flops / 24 B ≈ **0.42 flop/byte** → bandwidth-bound on both.
 
-**Cache boundary — use the measured number, not the guide's.** `an earlier local guide/docs/08` claims an
-"11x cache cliff" at the L3 boundary. **Krit's own serial data does not reproduce that**: 500 -> 1000
-costs **5.02x** where the 4.00x work increase predicts 4.00x, i.e. a **25% excess**, while 250 -> 500
-(both in L3) and 1000 -> 2000 (both in DRAM) are 4.06x and 4.00x. So the boundary is real but far
-smaller than 11x at `-O2`. Open hypothesis: the `-O2`/no-`march=native` build is instruction-limited
-(SSE2) and therefore cannot exploit L3's higher bandwidth, *masking* the cliff — which predicts the
-excess should **grow** after rebuilding `-O3 -march=native`. Test this in Week 1 Step 3. Derivation
-and data: `docs/stability-and-scaling.md`.
+**Machine state changes the numbers more than noise does.** Within one idle run, 10 repeats spread
+**+3.7% median, +10% max** over the fastest. Between states it is far larger: Krit's C code, same source
+and `-O2` flags, ran 7.94 ms/step (~09-11), **11.42 ms/step with a video player running**, and 8.52 ms/step
+once it was closed. **Rules: check the machine is idle before measuring — by `top`'s CPU idle %, not the load average alone (here
+`i915_flip` display workers sit in disk-wait and hold the load average near 1–2 on an idle machine); compare only
+numbers from the same run; never compare absolute times across days.** (The inherited "median +22%,
+max +83%" was not reproduced within a run.)
 
-**Known negative results. Do not "fix" these:**
-- Padding the grid row (`ny+8`) does not help this stencil (0.86–0.99x): 4 streams into an 8-way
-  cache, and conflicts need >8.
-- `collapse(2)` costs ~1.6x on the CPU by inhibiting vectorisation. It is mandated by the spec, so
-  it stays — measured and reported in a table, not silently dropped.
+**Cache boundary — build-dependent (idle, same session, 2026-09-22).** 500 -> 1000 is 4.0x the work but
+costs **4.92x** with Krit's `-O2` C and **9.59x** with the `-O3 -march=native` C++. The optimised build's
+cliff is twice as large — so the old guide's "11x" was plausible for an optimised build, and an earlier
+correction here that called it unreproduced (by comparing it with `-O2` data) was wrong. At N=1000 the
+optimised kernel still moves 16.3 GB/s, above the DRAM ceiling, so **draw DRAM-bound conclusions only
+from N >= 2000**. Data: `docs/stability-and-scaling.md`.
+
+**Measured findings to keep:**
+- `collapse(2)` costs **1.42x (Krit's C) / 1.46x (C++)** at 1 thread, `-O3 -march=native`, idle, because
+  it stops GCC vectorising the kernel — confirmed by GCC's own `-fopt-info-vec` report ("unsupported
+  control flow" / "not profitable"). Mandated by the spec, so it stays, reported with its cost.
+- Padding the grid row does **not** help this stencil: **0.97x** (row 2001), **0.99x** (row 2048), idle.
+  It *does* help column traversal (1.4–1.9x).
+- DRAM latency 86 ns (64 MB) to 105 ns (1 GB); second-level TLB knee **measured** between 1536 and 2048
+  pages (6.2 -> 11.2 ns). All in `docs/memory-hierarchy-from-zero.md`.
 
 ## GPU offload — works, but fails silently
 
@@ -196,11 +216,14 @@ Measured ceilings on this machine:
 
 | Ceiling | Measured | Theoretical | Achieved |
 |---|---|---|---|
-| Host memory (triad) | **9.27 GB/s** | 19.2 | 48% |
+| Host memory (triad, STREAM-counted) | **10.1–11.0 GB/s** (paired program below, 09-22; 9.27 on 09-17, state unknown) | 19.2 | 53–57% |
 | PCIe host->device / device->host | 3.66 / 3.73 GB/s | 15.75 | 23% |
-| **GPU triad, resident, best geometry** | **7.15 GB/s** | **112** | **6.4%** |
+| **GPU triad, resident, best geometry** | **7.15 GB/s** (7.11–7.37 re-run 09-22) | **112** | **6.4%** |
 
-So on this toolchain **the GPU is worth 0.77x the CPU** and no tuning changes it. The anomaly
+So on this toolchain **the GPU is worth ~0.7x the CPU** (0.65–0.71x: both triads in one process, run twice on
+09-22, the second on a quiet machine (CPU ~95% idle, load settled at ~2); source in the audit's appendix; the earlier "0.77x"
+divided by a lower 09-17 host figure) and no tuning changes it. The host range here comes from that paired program;
+the Environment section's 10.6–10.9 is a separate CPU-only triad the same afternoon — two runs of one quantity. The anomaly
 reproduces in a ten-line triad with no stencil, no `collapse(2)` and no indexing, which eliminated
 those hypotheses outright.
 
@@ -208,9 +231,13 @@ those hypotheses outright.
 offload reaches 6% of device bandwidth"*, never as *"the GPU is slow"*.
 
 **Say "GCC's offload", not "OpenMP offload".** Clang/NVHPC use different runtimes and may not share
-the cap — untestable here (`libomptarget` absent). Still open: `-misa=sm_61` (GCC defaults to sm_30).
+the cap — untestable here (`libomptarget` absent). Still open: `-misa=sm_61` (GCC 16 defaults to
+**sm_52** — checked in the emitted PTX, 2026-09-22; an earlier "sm_30" was wrong).
 
 **The naive-vs-optimized comparison is unaffected** — both share the cap, so their difference is
-still a clean PCIe measurement, and it matched its model to 1%.
+still a clean PCIe measurement. Corrected model (audit 2026-09-22): the naive kernel moves **3** arrays
+per step (`to: tt`, `tofrom: tt_`) = 48 GB over 500 steps at the measured 3.66/3.73 GB/s -> **13.0 s**,
+against the measured 12.64 s gap (~3%). The earlier "matched to 1%" used 4 transfers at an assumed
+5 GB/s — two errors that cancelled.
 
 **Any future GPU number is reported against the 6.4% ceiling, not the 112 GB/s datasheet figure.**

@@ -231,7 +231,7 @@ in all four variants.
 - The comparison is about the kernel. Allocation, the initial condition and output are not.
 - In the OpenMP variant the initial condition is itself parallel, so timing around it would partly
   measure first touch, not the kernel.
-- Noise is already high on this machine (median +22% over min); unrelated work inside the timed region
+- Measurements on this machine drift between sessions (same code 44% slower on a different day, audit #19); unrelated work inside the timed region
   adds variance that has nothing to do with the question.
 - All four variants must time exactly the same region, or a difference in *what* is timed shows up as a
   difference in performance.

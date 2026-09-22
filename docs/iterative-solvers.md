@@ -49,7 +49,7 @@ it is why iterative methods dominate PDE work.
 > **Already written.** Jacobi on `laplacian(u) = 0` is structurally identical to the explicit heat
 > kernel. Running the existing solver to steady state **is** a Jacobi solve.
 
-**2. Gauss-Seidel** — use new values immediately. Exactly 2x fewer iterations than Jacobi (measured
+**2. Gauss-Seidel** — use new values immediately. About 2x fewer iterations than Jacobi (1.96x, measured
 at every N). Chapra calls this **Liebmann's method** for Laplace (Ch 29) — same thing, different name.
 
 > **This is the in-place update from gate question 1** — wrong for time-accurate stepping because it

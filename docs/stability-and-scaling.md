@@ -142,6 +142,20 @@ cache cliff is being *masked*. Rebuilding `-O3 -march=native` should therefore m
 excess **larger**, not smaller. If it does, that is strong evidence the baseline was never
 bandwidth-bound at N=500 in the first place.
 
+**Tested 2026-09-22 on an idle machine — confirmed.** Per-step time, same session, both builds:
+
+| Transition | work | C, `-O2` (original) | C++, `-O3 -march=native` |
+|---|---|---|---|
+| 250 -> 500 | 4.02x | 4.20x | 5.27x |
+| 500 -> 1000 | 4.01x | 4.92x | **9.59x** |
+| 1000 -> 2000 | 4.00x | 4.44x | 5.10x |
+
+The optimised build shows a cliff about twice as large. So the old guide's "11x cache cliff" was probably
+right *for an optimised build*; it was never comparable with Krit's `-O2` 5.02x, and an earlier "correction"
+that called it unreproduced was itself wrong. Also: at N=1000 the optimised kernel moves 16.3 GB/s, *above* the
+~14.5 GB/s memory ceiling, so part of that grid is still served from L3. **Only N >= 2000 is fully
+memory-bound** in the optimised build.
+
 ### Holding the physical end time fixed
 
 This is where it stops being 4x. Stability ties `dt` to `dx`:

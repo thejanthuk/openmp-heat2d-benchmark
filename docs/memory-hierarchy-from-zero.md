@@ -6,9 +6,11 @@ Built from zero, no vocabulary assumed. Every number here was measured on this m
 
 ## The fact underneath everything
 
-The CPU runs at ~3.4 GHz — about 3 operations per nanosecond. **A trip to RAM costs ~100 ns**, which
-is **~343 CPU cycles** (measured). While waiting for one number, the processor could have done ~300
-arithmetic operations. Everything below is hardware avoiding that trip.
+The CPU runs at ~3.4 GHz — about 3 operations per nanosecond. **A trip to RAM costs roughly 85–105 ns**, which
+is **~300–350 CPU cycles** (idle pointer chase, 2026-09-22: 86 ns at 64 MB, 93 ns at 256 MB, 105 ns at 1 GB —
+bigger arrays add TLB misses). While waiting for one number, the processor could have done ~300 arithmetic
+operations. *(An earlier "60–85 ns, the old ~100 ns not reproduced" compared smaller arrays measured under load
+and was wrong; the old guide's ~100 ns holds for large arrays.)* Everything below is hardware avoiding that trip.
 
 ## Cache line
 
@@ -46,7 +48,10 @@ array outgrows cache. Same reason the L3 boundary shows at 500 -> 1000 in the so
 
 Programs use **virtual** (fake) addresses; the OS maps them to real RAM in 4 KB chunks called
 **pages**. That map lives in RAM, so consulting it would itself cost a RAM trip — hence a small
-cache *of the map*: the **TLB**. Measured here: **~1536 entries**, covering 1536 * 4 KB = **6 MB**.
+cache *of the map*: the **TLB**. Its second level has **1536 entries** on this CPU — **measured 2026-09-22**:
+a one-line-per-page chase costs 6.0 ns at 1024 pages, 6.2 ns at 1536, then **11.2 ns at 2048** with no
+data-cache boundary in between. (The first level, 64 entries, shows as a knee between 64 and 128 pages.)
+It covers 1536 * 4 KB = **6 MB**.
 
 Stride-`m` access jumps ~16 KB per step — across four page boundaries — so nearly every access needs
 a different map entry. Past ~1536 distinct pages the TLB misses, and each miss adds a RAM trip *just
@@ -110,11 +115,13 @@ exactly **256 lines**:
 |---|---|---|---|---|---|
 | L1 | 64 | 256 mod 64 = **0** | **1** | 8 | **1.6%** |
 | L2 | 1024 | 256 | 4 | 16 | **0.4%** |
-| L3 | 8192 | 256 | 32 | 384 | **0.4%** |
+| L3 | 8192 | — | — | — | *not predictable this way* |
 
-Reuse needs 2048 lines resident; L3 can offer **384**. The levels do not fail independently — a
-power-of-two stride collides in **all of them at once**, because they all index by power-of-two sets.
-Extra cache is useless when 99.6% of it is unreachable.
+**Correction (audit 2026-09-22):** an earlier version gave L3 as "32 sets reachable, 384 lines, 0.4%".
+That is wrong in principle: Intel's L3 is split into slices chosen by an **undocumented address hash**, so
+simple stride-mod-sets arithmetic does not predict L3 conflicts. The L1 and L2 rows stand — they use plain
+indexing — and they alone explain why the reuse (2048 lines needed) cannot survive in L1 or L2. Whether L3
+also suffers is an empirical question; the padding experiment below measures the combined effect.
 
 ### Proof: change one number
 
@@ -139,7 +146,8 @@ using less of it.
 Both are right; they are different regimes.
 
 - **The stencil**: `j` inner, stride 1, ~4 streams (rows `i-1`, `i`, `i+1`, plus output) into an
-  8-way L1. Nothing collides — padding buys nothing and wastes memory. That is the measured 0.86-0.99x.
+  8-way L1. Nothing collides — padding buys nothing and wastes memory. Measured idle 2026-09-22: **0.97x** (row 2001) and **0.99x** (row 2048) — padding does not help this stencil.
+(The old guide's lower bound of 0.86x was not reproduced.)
 - **Column traversal**: one stream at a pathological power-of-two stride hammering a single set.
   Padding is transformative.
 
@@ -152,7 +160,7 @@ stride**. Diagnosing which regime you are in is the skill.
 |---|---|
 | Cache lines | 8x memory traffic — **measured 8.1x** |
 | TLB | extra lookups past ~1536 pages |
-| Prefetcher | stops helping; full ~100 ns exposed per access |
+| Prefetcher | stops helping; full ~85–105 ns exposed per access |
 | SIMD | cannot vectorise — no adjacent values to load |
 
 All four push the same way, which is why the effect is large and reliable rather than marginal.
