@@ -177,5 +177,9 @@ Ch 9 apart from the `collapse` figure, Appendix A (glossary — look up as neede
 5. Then Tier 2 of whichever book the next milestone needs: Chapra Ch 30.3–30.5 if the discussion turns to
    implicit methods; OpenMP Ch 6 and 8 before the GPU variants.
 
+**Beyond these two books:** `docs/book-recommendations.md` lists what to read for the career goal,
+including the 2017 sequel *Using OpenMP — The Next Step* and the 2023 *Programming Your GPU with OpenMP*,
+which cover what this 2007 volume lacks.
+
 The GPU chapters do not exist in either book. That material is the OpenMP 4.5+ specification plus this
 repo's own measurements.
