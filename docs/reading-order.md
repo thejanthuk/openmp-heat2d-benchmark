@@ -183,3 +183,98 @@ which cover what this 2007 volume lacks.
 
 The GPU chapters do not exist in either book. That material is the OpenMP 4.5+ specification plus this
 repo's own measurements.
+
+---
+
+# Months 1–3: chapter-level order for the four sources Krit downloaded
+
+> Added 2026-09-25 after Claude opened each PDF in `docs/` and read its table of contents. The order is
+> driven by what this project needs next (the naive GPU variant) and by the open questions in
+> `docs/questions.md`, not by the books' own chapter order.
+
+**Navigation.** In `PerformanceAnalysisAndTuningOnModernCPUs_SecondEdition.pdf` the PDF page equals the
+printed page. In the two MIT Press scans the offset **drifts** (Deakin & Mattson ≈ +37 early, +45 late;
+van der Pas et al. ≈ +18 early, +21 late), so search the section title instead of trusting an offset.
+Page numbers below are **printed** pages.
+
+### Step 0 — one sitting, 13 pages
+
+**Williams, Waterman & Patterson, "Roofline" (CACM, 2009).** The vocabulary already used in this repo:
+arithmetic intensity, the bandwidth roof, the compute roof, the ridge point.
+*Question:* this kernel is 0.42 flop/byte. Where does it sit relative to the ridge point of the test machine, and
+what does the model say the maximum useful thread count is?
+
+### Step 1 — this week, ~45 pages. Bakhvalov, *Performance Analysis and Tuning on Modern CPUs*, 2nd ed.
+
+- **Ch. 2, Measuring Performance (pp. 24–39)** — noise in modern systems, microbenchmarks, active
+  benchmarking.
+- **Appendix A, Reducing Measurement Noise (pp. 324–326).**
+- **Ch. 4, Terminology and Metrics (pp. 77–99)** — IPC/CPI, pipeline slots, cache miss, what a counter
+  actually counts.
+
+This is the audit's lesson in book form, and it is the fastest payback of anything on this list.
+*Question:* which of §2.1's noise sources explains the 44% swing between the video-player run and the
+idle run, and which of Appendix A's mitigations are available without root on this machine?
+
+### Step 2 — the next milestone, ~120 pages. Deakin & Mattson, *Programming Your GPU with OpenMP*
+
+Read **Part I and Part II, chapters 1–5 (pp. 5–124)**, which build what the authors call the GPU Common
+Core. This is precisely versions 3 and 4 of the project.
+
+- **Ch. 3, Running Parallel Code on a GPU (p. 59)** — `target`, moving data, `loop`.
+- **Ch. 4, Memory Movement (p. 75)**, especially **§4.4 Optimizing Data Movement (p. 84)** and
+  **§4.4.4 Pointer Swapping (p. 91)** — the exact double-buffer-plus-`target data` pattern this solver
+  uses, with the standard's own account of why the swap stays correct.
+- **Ch. 5, Using the GPU Common Core (p. 101)**, especially **§5.2 The Eightfold Path to Performance
+  (p. 108)**: occupancy (p. 112), data movement (p. 115), memory coalescence (p. 119).
+
+*Question:* §5.2.4 is about occupancy. Our measured occupancy under GCC is under 1% because of the
+20-threads-per-team cap. Does the Eightfold Path offer any lever that is not blocked by that cap?
+
+### Step 3 — short, and explains a number already measured, ~35 pages. van der Pas et al., *The Next Step*
+
+- **§2.1.3, The Collapse Clause (p. 43).**
+- **Ch. 5, SIMD (pp. 221–250)** — `simd`, `simdlen`, `safelen`, `declare simd`.
+
+*Question:* `collapse(2)` costs 1.42x/1.46x here because GCC stops vectorising. After Ch. 5, what would
+`collapse(2) simd` or an explicit `simd` clause be expected to do, and does the spec permit the
+combination the project needs?
+
+### Step 4 — attacks an open question, ~85 pages. van der Pas et al., Ch. 4, Thread Affinity
+
+pp. 133–218: cc-NUMA characteristics (p. 151), **first touch (p. 153)**, the places concept (p. 161),
+**close and spread policies (pp. 167–186)**, and "Where are my threads running?" (p. 194).
+
+*Question:* 8 threads is the slowest configuration measured and 16 recovers. Design an `OMP_PLACES` and
+`OMP_PROC_BIND` experiment that would distinguish hyperthread contention from thread migration.
+
+### Step 5 — the GCC cap in context, ~25 pages. Deakin & Mattson, Ch. 6
+
+pp. 127–149, especially **§6.2.1 Controlling the Number of Teams and Threads (p. 132)**.
+*Question:* what does the standard say `num_teams` and `thread_limit` *should* do, and therefore how
+should the finding be phrased — as a GCC runtime limitation, not an OpenMP one?
+
+### Step 6 — reference, not reading
+
+- van der Pas et al., **Ch. 6, Heterogeneous Architectures (pp. 253–328)** — map clause semantics, device
+  data environments, reference counting (§6.8.1, p. 301), device pointers. Look up what is needed.
+- **OpenMP Examples 6.0** (`docs/openmp-examples-6.0.pdf`): **Ch. 6 Devices**, especially §6.16
+  (`target teams distribute` variants, pp. 243–253) and **§12.11 Target Offload (p. 572)**; **Ch. 4** for
+  `proc_bind` examples (pp. 60–65).
+
+### Later in the three months, once the GPU variant runs
+
+Bakhvalov **Ch. 3** (CPU microarchitecture, pp. 40–76), **Ch. 5** (performance analysis approaches, incl.
+Top-Down Microarchitecture Analysis, pp. 100–128), **Ch. 6–7** (counters and tools, pp. 129–192),
+**Ch. 8** (optimizing memory accesses, pp. 193–211), **Ch. 9** (computations and vectorisation,
+pp. 212–237), **Ch. 13** (multithreaded applications, true and false sharing, pp. 288–309).
+
+### Skip for now, with reasons
+
+- *The Next Step* **Ch. 1** — a recap of OpenMP 2.5, already known.
+- *The Next Step* **Ch. 3, Tasking (pp. 103–150)** — no tasking in this project; read when a problem is
+  irregular rather than a grid.
+- Deakin & Mattson **Ch. 8–9** (multi-GPU, asynchronous offload, cuBLAS interop) — one GPU here.
+- Bakhvalov **Ch. 10–12** (branch prediction, machine code layout) — a bandwidth-bound stencil with no
+  branches in its inner loop will not benefit.
+- The 1st edition of Bakhvalov also in `docs/` — read the 2nd edition file only.

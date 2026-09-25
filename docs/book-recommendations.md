@@ -37,11 +37,11 @@ Three different modes, and mixing them up wastes months:
 
 Not senior material; just the floor. Skip on sight if the topic is comfortable.
 
-- Bryant & O'Hallaron, **Computer Systems: A Programmer's Perspective**, 3rd ed. (2015). The C-to-hardware
+- [X] Bryant & O'Hallaron, **Computer Systems: A Programmer's Perspective**, 3rd ed. (2015). The C-to-hardware
   bridge. 4th ed. expected Spring 2027. **[model]**
-- Arpaci-Dusseau, **Operating Systems: Three Easy Pieces** (free). Virtualization, concurrency,
+- [X] Arpaci-Dusseau, **Operating Systems: Three Easy Pieces** (free). Virtualization, concurrency,
   persistence. **[model]**
-- Patterson & Hennessy, **Computer Organization and Design** (RISC-V ed., 2020). Skip if pipelines and
+- [X] Patterson & Hennessy, **Computer Organization and Design** (RISC-V ed., 2020). Skip if pipelines and
   caches are already comfortable. **[reference]**
 
 ---
@@ -50,11 +50,11 @@ Not senior material; just the floor. Skip on sight if the topic is comfortable.
 
 ### Performance modelling and measurement — the discipline this project has been teaching by accident
 
-- **Hager & Wellein, *Introduction to High Performance Computing for Scientists and Engineers*, 2nd ed.**
+- [X] **Hager & Wellein, *Introduction to High Performance Computing for Scientists and Engineers*, 2nd ed.**
   (CRC, 2026; 1st ed. 2010 still excellent). Roofline, STREAM, balance metrics, ccNUMA, and the
   **ECM model** — analytic prediction of a kernel's runtime *before* running it. The single most
   aligned book with what this repo does by hand. **[model]**
-- **Bakhvalov, *Performance Analysis and Tuning on Modern CPUs*, 2nd ed.** (2024, **free PDF**).
+- [X] **Bakhvalov, *Performance Analysis and Tuning on Modern CPUs*, 2nd ed.** (2024, **free PDF**).
   Top-Down Microarchitecture Analysis, `perf`, counters, case studies. **[model]**
 - **Jain, *The Art of Computer Systems Performance Analysis*** (1991) or **Lilja, *Measuring Computer
   Performance*** (2000). Experiment design, confounding variables, when a difference is real. Old, and
@@ -90,7 +90,7 @@ Not senior material; just the floor. Skip on sight if the topic is comfortable.
 
 ### OpenMP — current, not 2007
 
-- **van der Pas, Stotzer & Terboven, *Using OpenMP — The Next Step*** (MIT Press, 2017). The direct
+- [X] **van der Pas, Stotzer & Terboven, *Using OpenMP — The Next Step*** (MIT Press, 2017). The direct
   sequel to the book in `docs/`: affinity, accelerators, tasking, SIMD. **[model]**
 - **Deakin & Mattson, *Programming Your GPU with OpenMP*** (MIT Press, 2023). The book for `target`
   offload and performance portability. Most relevant single book to versions 3–4 of this project.
@@ -193,15 +193,56 @@ A reading habit worth building now: one paper a week, in a notebook, with the me
 
 Two threads at once: one that pays off inside the placement, one that compounds for the career.
 
-| Months | Placement thread | Career thread |
-|---|---|---|
-| 1–3 | *Using OpenMP — The Next Step*; *Programming Your GPU with OpenMP*; OpenMP 6.0 examples | Bakhvalov (free); the Roofline paper |
-| 3–6 | Hager & Wellein — then re-derive this project's ceilings from its models | Memory Consistency & Coherence Primer (free) |
-| 6–9 | PMPP 5th ed.; Aamodt for the architecture underneath | Jain or Lilja on experiment design; start the paper habit |
-| 9–12 | *Using MPI* + *Using Advanced MPI*; Kokkos lectures | *How to Scale Your Model* (TPU); Sze & Emer; TPU papers |
+### Months 1–3
 
-After that, *The Art of Multiprocessor Programming* and H&P chapters as reference, chosen by whichever
-direction the work has taken — HPC simulation, ML systems, or systems engineering generally.
+- ~~**Placement thread.** Ruud van der Pas, Eric Stotzer & Christian Terboven, ***Using OpenMP — The Next
+  Step: Affinity, Accelerators, Tasking, and SIMD*** (MIT Press, 2017)~~; ~~Tom Deakin & Timothy G. Mattson,
+  ***Programming Your GPU with OpenMP: Performance Portability for GPUs*** (MIT Press, 2023)~~; ~~the
+  **OpenMP Application Programming Interface Examples** document for release 6.0 (openmp.org, free).~~
+- **Career thread.** ~~Denis Bakhvalov, ***Performance Analysis and Tuning on Modern CPUs: Learn to Write
+  Fast Software Like a Pro***, 2nd ed. (2024, free PDF)~~; ~~Samuel Williams, Andrew Waterman & David
+  Patterson, **"Roofline: An Insightful Visual Performance Model for Multicore Architectures"**
+  (*Communications of the ACM*, 2009)~~.
+
+### Months 3–6
+
+- **Placement thread.** Georg Hager & Gerhard Wellein, ***Introduction to High Performance Computing for
+  Scientists and Engineers***, 2nd ed. (CRC Press, 2026) — then re-derive this project's ceilings from
+  its models rather than from measurements.
+- **Career thread.** Vijay Nagarajan, Daniel J. Sorin, Mark D. Hill & David A. Wood, ***A Primer on
+  Memory Consistency and Cache Coherence***, 2nd ed. (Morgan & Claypool / Springer, 2020; open access).
+
+### Months 6–9
+
+- **Placement thread.** Wen-mei W. Hwu, David B. Kirk & Izzat El Hajj, ***Programming Massively Parallel
+  Processors: A Hands-on Approach***, 5th ed. (Morgan Kaufmann, 2026); Tor M. Aamodt, Wilson Wai Lun Fung
+  & Timothy G. Rogers, ***General-Purpose Graphics Processor Architectures*** (Springer, 2018) for the
+  architecture underneath it.
+- **Career thread.** Raj Jain, ***The Art of Computer Systems Performance Analysis: Techniques for
+  Experimental Design, Measurement, Simulation, and Modeling*** (Wiley, 1991), or David J. Lilja,
+  ***Measuring Computer Performance: A Practitioner's Guide*** (Cambridge University Press, 2000). Start
+  the one-paper-a-week habit here.
+
+### Months 9–12
+
+- **Placement thread.** William Gropp, Ewing Lusk & Anthony Skjellum, ***Using MPI: Portable Parallel
+  Programming with the Message-Passing Interface***, 3rd ed. (MIT Press, 2014), then William Gropp,
+  Torsten Hoefler & Rajeev Thakur, ***Using Advanced MPI: Modern Features of the Message-Passing
+  Interface*** (MIT Press, 2014); **The Kokkos Lectures** (Sandia National Laboratories, free slides and
+  recordings).
+- **Career thread.** Jacob Austin et al. (Google DeepMind), ***How to Scale Your Model: A Systems View of
+  LLMs on TPUs*** (jax-ml.github.io/scaling-book, free); Vivienne Sze, Yu-Hsin Chen, Tien-Ju Yang & Joel
+  S. Emer, ***Efficient Processing of Deep Neural Networks*** (Morgan & Claypool, 2020); Norman P. Jouppi
+  et al., **"In-Datacenter Performance Analysis of a Tensor Processing Unit"** (ISCA, 2017) and the TPUv4
+  follow-ups.
+
+### After the twelve months
+
+Maurice Herlihy, Nir Shavit, Victor Luchangco & Michael Spear, ***The Art of Multiprocessor Programming***,
+2nd ed. (Morgan Kaufmann, 2020), and chapters of John L. Hennessy, David A. Patterson & Christos
+Kozyrakis, ***Computer Architecture: A Quantitative Approach***, 7th ed. (Morgan Kaufmann, 2025) as
+reference — chosen by whichever direction the work has taken: HPC simulation, ML systems, or systems
+engineering generally.
 
 **The caveat that matters most:** every book here trails the hardware by years, and the AI-accelerator
 material trails it by months. The durable skill is the loop this project already practises — predict from
