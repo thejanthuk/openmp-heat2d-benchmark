@@ -19,5 +19,6 @@ can be read honestly as evidence of Krit's own work.
 | `docs/build-and-run.md` | Claude (reference card). |
 | `docs/audit-2026-09-22.md` | Claude, auditing Claude's own claims. |
 | `docs/postmortems/2026-09-22-tsan-openmp-false-positives.md` | Claude, about Claude's own error. |
+| `docs/reading-order.md` | Claude (reading plan for the two reference books). |
 
 Every Claude-written file in `docs/` also says so at the top.
