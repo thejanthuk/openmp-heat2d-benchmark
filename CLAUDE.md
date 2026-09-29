@@ -77,7 +77,7 @@ Standing rules:
 | `docs/questions.md` | Candidate research questions + the observation that generated each. |
 | `docs/postmortems/` | Written when a reported result was wrong, a bug took >2 h, or a decision was reversed. |
 
-**Attribution — the repo is Krit's authorship evidence and is pushed to the university GitLab.**
+**Attribution — the repo is Krit's authorship evidence and is pushed to GitHub, publicly.**
 Every file Claude writes or drafts carries a one-line attribution at the top, and is listed in
 `AUTHORSHIP.md`. Session logs are written in **neutral third person** ("Krit asked…", "Claude
 measured…"), never in Krit's first-person voice. Never write in `NOTES.md` except in an entry clearly

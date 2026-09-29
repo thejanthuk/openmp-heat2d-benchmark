@@ -8,8 +8,6 @@ can be read honestly as evidence of Krit's own work.
 |---|---|
 | `include/heat/*.hpp`, `tests/*.cpp`, `src/` | **Krit.** Claude reviewed it and suggested changes; Krit wrote the code. |
 | `NOTES.md` | **Krit**, except one entry explicitly marked *"DRAFTED BY CLAUDE"*. |
-| `docs/private/project-spec.pdf` | the supervisor. |
-| `docs/private/supervisor-email` | Krit and the supervisor. |
 | `CMakeLists.txt`, `.gitignore` | Claude (build infrastructure), at Krit's request. |
 | `CLAUDE.md` | Claude — instructions for the AI assistant. |
 | `docs/design-decisions.md` | Decisions reached by Krit in discussion with Claude; entries drafted by Claude. |
@@ -23,3 +21,8 @@ can be read honestly as evidence of Krit's own work.
 | `docs/book-recommendations.md` | Claude (researched book list for the career goal). |
 
 Every Claude-written file in `docs/` also says so at the top.
+
+**Not in this repository.** The project spec (`docs/private/project-spec.pdf`) and the supervisor's email
+reply are his material, not Krit's, so they are held locally and gitignored rather than published
+here. Section 6 of the spec is summarised in `CLAUDE.md`; the four-version structure and the
+`collapse(2)` and `target data` requirements come from it.

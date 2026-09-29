@@ -20,7 +20,10 @@ data/raw/
 
 # Reference books — copyrighted, and 55 MB. Kept locally, never pushed.
 docs/*.pdf
-!docs/private/project-spec.pdf
+
+# Supervisor-owned material: the project spec and the emailed reply are the
+# supervisor's to publish, not this repository's. Kept locally, never pushed.
+docs/private/
 
 # Editor / OS
 .vscode/
