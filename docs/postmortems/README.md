@@ -47,3 +47,6 @@ GPU row when it fails" is.
 ## Index
 
 - `2026-09-22-tsan-openmp-false-positives.md` — Claude's toolkit claimed GCC TSan was clean on correct OpenMP code; it is not.
+- `2026-09-29-scrub-verification-failures.md` — two checks during the public-release scrub that did
+  not check what they claimed: a rule that missed a historical spelling, and a verification pattern
+  that matched something deliberately kept.
