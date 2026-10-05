@@ -63,10 +63,10 @@ target_link_libraries(heat_openmp_cpu PRIVATE heat_common OpenMP::OpenMP_CXX)
 # OFF by default so the project still configures on a machine with no nvptx
 # toolchain. Enable with: cmake -S . -B build -DHEAT_GPU=ON
 if(HEAT_GPU)
-  foreach(variant naive optimized)
-    add_executable(heat_gpu_${variant} src/openmp_gpu_${variant}/main.cpp)
-    target_link_libraries(heat_gpu_${variant} PRIVATE heat_common OpenMP::OpenMP_CXX)
-
+  # One place for the device flags, so the variants and the differential test
+  # cannot drift apart. A target built with different device flags from the one
+  # it is compared against is not a controlled experiment.
+  function(heat_add_offload_flags target)
     # -fno-stack-protector: Gentoo hardens GCC by default; nvptx cannot do it.
     # -foffload-options=...=-lm: GCC does NOT forward -lm to the device link,
     #   so sin() inside a target region fails to link without this.
@@ -75,7 +75,7 @@ if(HEAT_GPU)
     #   which leaves absolute GPU times meaningless (added 2026-10-05; the gap
     #   between the naive and optimized variants is unaffected, since both
     #   shared the omission).
-    target_compile_options(heat_gpu_${variant} PRIVATE
+    target_compile_options(${target} PRIVATE
       -foffload=nvptx-none
       -fno-stack-protector
       -foffload-options=nvptx-none=-O3
@@ -90,14 +90,43 @@ if(HEAT_GPU)
     # OMP_TARGET_OFFLOAD=MANDATORY, which CAN silently run on the host.)
     # GCC generates device code during the LINK step (via mkoffload), so the
     # device options must appear here as well as on the compile line.
-    target_link_options(heat_gpu_${variant} PRIVATE
+    target_link_options(${target} PRIVATE
       -fopenmp
       -foffload=nvptx-none
       -fno-stack-protector
       -foffload-options=nvptx-none=-O3
       -foffload-options=nvptx-none=-fno-stack-protector
       -foffload-options=nvptx-none=-lm)
+  endfunction()
+
+  # Each variant is added only if its source exists, so the naive version can
+  # be built and tested before the optimized one has been written. Previously
+  # the loop declared both targets and configuring failed with
+  #   No SOURCES given to target: heat_gpu_optimized
+  foreach(variant naive optimized)
+    set(variant_source ${CMAKE_CURRENT_SOURCE_DIR}/src/openmp_gpu_${variant}/main.cpp)
+    if(EXISTS ${variant_source})
+      add_executable(heat_gpu_${variant} ${variant_source})
+      target_link_libraries(heat_gpu_${variant} PRIVATE heat_common OpenMP::OpenMP_CXX)
+      heat_add_offload_flags(heat_gpu_${variant})
+    else()
+      message(STATUS "HEAT_GPU: src/openmp_gpu_${variant}/main.cpp not written yet -- skipping")
+    endif()
   endforeach()
+
+  # Full-field differential test, GPU naive vs the serial oracle. Built only
+  # with HEAT_GPU because it includes the offload solver. OMP_TARGET_OFFLOAD is
+  # set on the test itself: without it a host fallback would be timed and
+  # compared as though it were the GPU. The solver's own require() then refuses
+  # to return a result it did not compute on the device.
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/openmp_gpu_naive/solver.hpp)
+    add_executable(test_differential_gpu tests/differential_gpu.cpp)
+    target_link_libraries(test_differential_gpu PRIVATE heat_common OpenMP::OpenMP_CXX)
+    heat_add_offload_flags(test_differential_gpu)
+    add_test(NAME differential_gpu COMMAND test_differential_gpu)
+    set_tests_properties(differential_gpu PROPERTIES
+      ENVIRONMENT "OMP_TARGET_OFFLOAD=MANDATORY")
+  endif()
 endif()
 
 # --- tests -------------------------------------------------------------------

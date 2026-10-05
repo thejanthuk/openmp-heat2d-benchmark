@@ -6,7 +6,8 @@ can be read honestly as evidence of Krit's own work.
 
 | Path | Written by |
 |---|---|
-| `include/heat/*.hpp`, `tests/*.cpp`, `src/` | **Krit.** Claude reviewed it and suggested changes; Krit wrote the code. |
+| `include/heat/*.hpp`, `tests/*.cpp` (except the row below), `src/` | **Krit.** Claude reviewed it and suggested changes; Krit wrote the code. |
+| `tests/differential_gpu.cpp` | Claude (verification harness), at Krit's request, 2026-10-05. |
 | `NOTES.md` | **Krit**, except one entry explicitly marked *"DRAFTED BY CLAUDE"*. |
 | `CMakeLists.txt`, `.gitignore` | Claude (build infrastructure), at Krit's request. |
 | `CLAUDE.md` | Claude — instructions for the AI assistant. |
