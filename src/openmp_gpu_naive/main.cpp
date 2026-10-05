@@ -4,14 +4,14 @@
 #include "heat/config.hpp"
 #include "heat/field.hpp"
 
-#include "openmp_cpu/solver.hpp"
+#include "openmp_gpu_naive/solver.hpp"
 
 int main(int argc, char** argv)
 {
   try {
     const heat::Config config = heat::parse_args(argc, argv);
 
-    const auto field = heat::openmp_cpu::run(config);
+    const auto field = heat::openmp_gpu_naive::run(config);
 
     const heat::Indexer index{config.n_point_y};
     std::printf("Centre = %.17g\nTime = %.17g s\n",

@@ -86,6 +86,59 @@ Krit's answers (at 2026-09-16):
 
 ---
 
+### 2026-10-05 — the GPU does not agree with the CPU bit-for-bit, and that is not a bug
+> **DRAFTED BY CLAUDE at Krit's request — rewrite in your own words or delete it.**
+> The prediction below was Claude's, not Krit's: Claude set "bit-identical to the serial oracle" as
+> the done-criterion for the GPU variant, and it was wrong.
+
+**Predicted:** the GPU naive variant would be **bit-identical** to serial, the way the CPU OpenMP
+variant is. Reasoning: the kernel has no reduction, so every point is computed independently from a
+fixed expression, and there is no summation order to vary.
+
+**Observed:** full-field comparison over every grid point, six configurations.
+
+| Grid | rx | ry | points differing | max abs diff |
+|---|---|---|---|---|
+| 41x41, 2 / 3 / 101 steps | 0.2 | 0.2 | 0 | 0 |
+| 41x25, ly=0.5, 7 steps | 0.164 | 0.236 | 0 | 0 |
+| 121x61, 1 step | 0.32 | 0.08 | 624 of 7381 | 2.22e-16 |
+| 121x61, 50 steps | 0.32 | 0.08 | 1422 of 7381 | 2.22e-16 |
+
+2.22e-16 is one double-precision epsilon. Agreement is exact when rx equals ry, and when the two are
+merely comparable; it breaks when they differ by 4x. Forcing `-ffp-contract=off` on **both** host and
+device made it **worse**, not better: all six cases then differed, including 41x41.
+
+**Explained:** host and device code are produced by **two different compilers** — host GCC and the
+nvptx back end — from the same source. Each is free to choose how to fuse and associate
+`u + rx*S1 + ry*S2`: `(u + rx*S1) + ry*S2` and `u + (rx*S1 + ry*S2)` are algebraically identical and
+round differently. The choice only becomes visible when the two products differ enough in magnitude
+for the association to change the rounding, which is why rx=0.32 against ry=0.08 shows it and
+rx=ry=0.2 does not. That `-ffp-contract=off` made agreement worse says the two sides happen to agree
+*because* both contract to FMA.
+
+**The consequence, which matters more than the cause:** `==` is the wrong acceptance criterion across
+host and device. It held on square grids — the first thing anyone tests — so it would have passed and
+then "regressed" on the first non-square case. The criterion is now **max |diff| <= 1e-12 over every
+point**, chosen to sit far above rounding (1e-16, growing to ~1e-15 over hundreds of steps) and far
+below a logic error: the stale-buffer bug found the same day showed as ~2e-3, and the negative control
+in `tests/differential_gpu.cpp` measures 4e-4 to 5e-3. Twelve orders of magnitude of daylight, so the
+threshold is not delicate.
+
+**OPEN:** why does the disagreement appear only when rx and ry differ in magnitude? Answerable by
+comparing the emitted PTX against the host assembly for that one expression — see `docs/questions.md`.
+
+---
+
+### 2026-09-22 — OpenMP vs serial, 1 thread and all threads
+**Predicted:** (a) Roughly the same (1x), because 1 thread run is basically sequential.
+               (b) Faster, roughly the number of cores on that machine has (4x), because when you have 2 threads per
+               core, each threads can handle the task of read and write individually very well when using 1-4 threads. After that, it will go
+               downhill until it hit the context-switching bar.
+**Observed:**  (a) 0.72x (b) 0.96x at most
+**Explained:** Because thread overhead for doing parallel, and also `collpase(2)` stopping compiler from vectorizing (14 ops to 2 ops).
+
+---
+
 ## Entries
 
 ### 2026-09-15 — the prediction I did not make
