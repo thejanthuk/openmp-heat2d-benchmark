@@ -70,9 +70,15 @@ if(HEAT_GPU)
     # -fno-stack-protector: Gentoo hardens GCC by default; nvptx cannot do it.
     # -foffload-options=...=-lm: GCC does NOT forward -lm to the device link,
     #   so sin() inside a target region fails to link without this.
+    # -foffload-options=...=-O3: CMAKE_BUILD_TYPE's -O3 applies to the HOST
+    #   compiler only. Without this the device kernel is built unoptimised,
+    #   which leaves absolute GPU times meaningless (added 2026-10-05; the gap
+    #   between the naive and optimized variants is unaffected, since both
+    #   shared the omission).
     target_compile_options(heat_gpu_${variant} PRIVATE
       -foffload=nvptx-none
       -fno-stack-protector
+      -foffload-options=nvptx-none=-O3
       -foffload-options=nvptx-none=-fno-stack-protector
       -foffload-options=nvptx-none=-lm)
 
@@ -82,10 +88,13 @@ if(HEAT_GPU)
     #   undefined reference to `__offload_func_table'
     # so this one cannot be got wrong silently. (Unlike a missing
     # OMP_TARGET_OFFLOAD=MANDATORY, which CAN silently run on the host.)
+    # GCC generates device code during the LINK step (via mkoffload), so the
+    # device options must appear here as well as on the compile line.
     target_link_options(heat_gpu_${variant} PRIVATE
       -fopenmp
       -foffload=nvptx-none
       -fno-stack-protector
+      -foffload-options=nvptx-none=-O3
       -foffload-options=nvptx-none=-fno-stack-protector
       -foffload-options=nvptx-none=-lm)
   endforeach()

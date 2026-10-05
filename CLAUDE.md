@@ -91,10 +91,17 @@ stands from `NOTES.md` + `docs/sessions/` + `docs/design-decisions.md` alone.
 **Before quoting any number below, check its label.** *Measured* = re-tested by Claude on this
 machine. *Inherited* = copied from an earlier local guide and never re-checked. *Spec* = datasheet.
 
-Gentoo, kernel 7.1.7 (`CONFIG_PREEMPT=y`, `HZ=1000`; transparent huge pages compiled in,
-mode **madvise** since the 2026-09-16 kernel rebuild — plain allocations get none unless they ask).
-GCC 16.2.0, Clang 23.1.1, CMake 4.3.5, Python 3.14.7, gnuplot, gdb 17.2, rr 5.9.0, perf 7.2,
-Valgrind 3.27.1. Not installed: ParaView, `libomptarget`/Archer.
+Gentoo, kernel **7.2.8** (`CONFIG_PREEMPT=y`, `HZ=1000`, both re-checked 2026-10-05; transparent huge
+pages compiled in, mode **madvise** — plain allocations get none unless they ask).
+GCC **16.2.1_p20260926**, Clang 23.1.2, CMake 4.3.5, Python 3.14.8, gnuplot 6.0.5, gdb **18.1**,
+rr 5.9.0, perf 7.2, Valgrind 3.27.1. Not installed: ParaView, `libomptarget`/Archer.
+
+**Versions re-checked 2026-10-05** (the environment drifted under it while no measurement was taken):
+kernel 7.1.7 -> 7.2.8, GCC 16.2.0 -> 16.2.1_p20260926 (host **and** nvptx, matched), Clang 23.1.1 ->
+23.1.2, Python 3.14.7 -> 3.14.8, gdb 17.2 -> **18.1**. Nothing load-bearing moved — offload still runs on
+the device and the threads-per-team cap is still 20 (below) — but **gdb's "sees OpenMP thread teams"
+claim in `docs/debugging-toolkit.md` was verified on 17.2 and has not been re-tested on 18.1.** Measured
+*numbers* in this file predate the update; none has been re-taken.
 
 - **i7-7700HQ**, 4 cores / 8 threads. L1d 32 KiB 8-way, L2 256 KiB 4-way per core, **L3 6 MiB 12-way
   shared**, 64 B lines, AVX2+FMA. *(measured)*
@@ -143,7 +150,11 @@ from N >= 2000**. Data: `docs/stability-and-scaling.md`.
 
 ## GPU offload — works, but fails silently
 
-Offload is functional here via GCC's nvptx path (**re-verified 2026-09-15**: probe compiles, reports 1 device, and runs on the GPU under `OMP_TARGET_OFFLOAD=MANDATORY`). **The trap:** host GCC is built
+Offload is functional here via GCC's nvptx path (**re-verified 2026-10-05 under GCC 16.2.1**: probe
+compiles, reports 1 device, runs on the GPU under `OMP_TARGET_OFFLOAD=MANDATORY`, and the
+threads-per-team cap is **still 20** — `thread_limit(256)` returned `teams=10, threads=20`. The CMake
+GPU targets were also built and run for the first time, from a throwaway copy with placeholder sources:
+both configure, link, and offload). **The trap:** host GCC is built
 `--enable-offload-defaulted`, so a missing or mismatched offload toolchain makes
 `#pragma omp target` compile fine, report `omp_get_num_devices() == 1`, and then **run on the host**,
 producing plausible and entirely bogus GPU numbers.
